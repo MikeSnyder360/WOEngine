@@ -2,15 +2,20 @@ import { Worker } from 'bullmq';
 import pino from 'pino';
 import { buildOrchestrator } from './orchestrator/build';
 import { loadConfig } from './config';
+import { initSecretsManager } from './lib/secrets';
 
 const logger = pino();
 
 async function main() {
   const config = loadConfig();
 
+  // Initialize secrets manager
+  initSecretsManager(config.awsRegion);
+
   logger.info('[Orchestrator] Starting build worker...');
   logger.info(`[Orchestrator] Redis URL: ${config.redisUrl}`);
   logger.info(`[Orchestrator] Database URL: ${config.databaseUrl.split('@')[1]}`); // Hide credentials
+  logger.info(`[Orchestrator] AWS Region: ${config.awsRegion}`);
 
   // Create a queue worker that polls for jobs
   const worker = new Worker('builds', buildOrchestrator, {
