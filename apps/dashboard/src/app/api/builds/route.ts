@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { stripe, createBuildCharge } from '@/lib/stripe';
+import { enqueueBuild } from '@/lib/queue';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,9 +35,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Charge Stripe (PaymentIntent) before creating build
-    // For now, just create the build in queued status
+    // Verify subscription is active
+    const subscription = await prisma.subscription.findUnique({
+      where: { tenantId: app.tenantId },
+    });
 
+    if (!subscription || subscription.status !== 'active') {
+      return NextResponse.json(
+        { error: 'Subscription is not active' },
+        { status: 400 }
+      );
+    }
+
+    if (!subscription.stripeCustomerId) {
+      return NextResponse.json(
+        { error: 'No Stripe customer set up' },
+        { status: 400 }
+      );
+    }
+
+    // Per-build cost (in cents, e.g. $29 = 2900)
+    const costCents = 2900;
+
+    // Charge Stripe
+    const paymentIntent = await createBuildCharge(
+      subscription.stripeCustomerId,
+      costCents,
+      `WOEngine build for ${app.appName}`
+    );
+
+    if (paymentIntent.status !== 'succeeded') {
+      return NextResponse.json(
+        { error: 'Payment failed' },
+        { status: 402 }
+      );
+    }
+
+    // Create build record
     const build = await prisma.build.create({
       data: {
         appId,
@@ -43,10 +79,13 @@ export async function POST(request: NextRequest) {
         programVersionId: app.currentProgramVersionId,
         platforms: platforms as any,
         status: 'queued',
+        stripeChargeId: paymentIntent.id,
+        costCents,
       },
     });
 
-    // TODO: Enqueue job to Redis for orchestrator
+    // Enqueue job to Redis for orchestrator
+    await enqueueBuild(build.id, platforms as any);
 
     return NextResponse.json(build, { status: 201 });
   } catch (error) {
