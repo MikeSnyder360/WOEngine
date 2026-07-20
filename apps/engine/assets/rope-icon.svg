@@ -1,0 +1,16 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left handle -->
+  <rect x="16" y="48" width="8" height="32" rx="4" fill="#FF6B6B" />
+  <!-- Right handle -->
+  <rect x="104" y="48" width="8" height="32" rx="4" fill="#FF6B6B" />
+  <!-- Rope arcs -->
+  <path d="M 20 48 Q 28 24 64 28 Q 100 32 108 48" stroke="#4ECDC4" stroke-width="6" fill="none" stroke-linecap="round" />
+  <path d="M 20 80 Q 28 104 64 100 Q 100 96 108 80" stroke="#4ECDC4" stroke-width="6" fill="none" stroke-linecap="round" />
+  <!-- Motion lines -->
+  <g stroke="#FFD93D" stroke-width="2" stroke-linecap="round" opacity="0.7">
+    <line x1="8" y1="40" x2="4" y2="36" />
+    <line x1="120" y1="40" x2="124" y2="36" />
+    <line x1="12" y1="88" x2="8" y2="92" />
+    <line x1="116" y1="88" x2="120" y2="92" />
+  </g>
+</svg>

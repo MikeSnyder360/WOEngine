@@ -1,0 +1,42 @@
+{
+  "name": "HIIT",
+  "slug": "hiit",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/icon.png",
+  "userInterfaceStyle": "dark",
+  "backgroundColor": "#0B0D10",
+  "ios": {
+    "supportsTablet": true,
+    "bundleIdentifier": "com.electronsltd.hiit",
+    "infoPlist": {
+      "ITSAppUsesNonExemptEncryption": false
+    }
+  },
+  "android": {
+    "adaptiveIcon": {
+      "backgroundColor": "#E6F4FE",
+      "foregroundImage": "./assets/android-icon-foreground.png",
+      "backgroundImage": "./assets/android-icon-background.png",
+      "monochromeImage": "./assets/android-icon-monochrome.png"
+    },
+    "permissions": [
+      "android.permission.RECORD_AUDIO",
+      "android.permission.MODIFY_AUDIO_SETTINGS",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+    ]
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "plugins": [
+    "expo-audio"
+  ],
+  "extra": {
+    "eas": {
+      "projectId": "b1ef7c18-65d1-4be6-ae81-f40d618fa913"
+    }
+  },
+  "owner": "electronsltd"
+}

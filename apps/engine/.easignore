@@ -1,0 +1,12 @@
+# Generated files (per-build, never commit)
+src/theme.js
+src/data/program.default.json
+tenant.manifest.json
+
+# Standard ignores
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+.env.local
