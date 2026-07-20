@@ -1,0 +1,31 @@
+{
+  "name": "woengine",
+  "version": "0.1.0",
+  "description": "White-label fitness app engine - rebrandable iOS & Android apps with custom workouts",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "shared"
+  ],
+  "scripts": {
+    "dev:engine": "pnpm --filter engine start",
+    "dev:dashboard": "pnpm --filter dashboard dev",
+    "dev:orchestrator": "pnpm --filter orchestrator dev",
+    "build:engine": "pnpm --filter engine eas build --platform ios android --profile production",
+    "build:dashboard": "pnpm --filter dashboard build",
+    "build:orchestrator": "pnpm --filter orchestrator build",
+    "lint": "pnpm --filter ./apps --filter ./shared lint",
+    "test": "pnpm --filter ./apps --filter ./shared test",
+    "type-check": "pnpm --filter ./apps --filter ./shared type-check",
+    "db:migrate": "pnpm --filter dashboard prisma migrate dev",
+    "db:studio": "pnpm --filter dashboard prisma studio"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
