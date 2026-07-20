@@ -28,8 +28,9 @@ cp .env.example .env.local
 
 Edit `.env.local` with:
 - `DATABASE_URL` — already set to docker Postgres
-- `STRIPE_SECRET_KEY` — get from Stripe dashboard (test key)
 - `NEXTAUTH_SECRET` — generate with `openssl rand -base64 32`
+- `PAYMENTS_DISABLED=true` — demo mode (builds are free, no Stripe charges)
+  - Optional: if you want to test real Stripe, set `PAYMENTS_DISABLED=false` and add `STRIPE_SECRET_KEY`
 
 ### 4. Initialize database
 
@@ -153,13 +154,12 @@ pnpm dev
 
 ### Test full flow locally
 
-1. Sign in to dashboard
+1. Sign in to dashboard (demo: any email)
 2. Create app
 3. Save branding + program
 4. Trigger build
-   - Stripe test charge: `4242 4242 4242 4242` (test card)
-   - Any future date for expiry
-   - Any 3-digit CVC
+   - **Demo mode** (default): builds are free, no payment required
+   - Optional: to test Stripe, set `PAYMENTS_DISABLED=false` and use test card `4242 4242 4242 4242`
 5. Watch build history refresh (polls every 5 sec)
 
 ---

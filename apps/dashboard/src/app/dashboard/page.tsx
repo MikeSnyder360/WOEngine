@@ -120,6 +120,10 @@ export default function DashboardPage() {
       <section>
         <h2>Your Apps</h2>
 
+        <div style={{ padding: '0.75rem', backgroundColor: '#fff3cd', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem' }}>
+          <strong>Demo Mode:</strong> Payments are disabled. Builds are free for testing.
+        </div>
+
         {apps.length === 0 ? (
           <p>No apps yet.</p>
         ) : (
@@ -144,7 +148,7 @@ export default function DashboardPage() {
 
         {selectedAppId && (
           <button onClick={handleBuildApp} style={{ backgroundColor: '#28a745' }}>
-            Build & Submit
+            Build & Submit (Free)
           </button>
         )}
       </section>

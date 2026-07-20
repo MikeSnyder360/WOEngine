@@ -56,19 +56,26 @@ export async function POST(request: NextRequest) {
 
     // Per-build cost (in cents, e.g. $29 = 2900)
     const costCents = 2900;
+    const paymentsDisabled = process.env.PAYMENTS_DISABLED === 'true';
 
-    // Charge Stripe
-    const paymentIntent = await createBuildCharge(
-      subscription.stripeCustomerId,
-      costCents,
-      `WOEngine build for ${app.appName}`
-    );
+    let chargeId = null;
 
-    if (paymentIntent.status !== 'succeeded') {
-      return NextResponse.json(
-        { error: 'Payment failed' },
-        { status: 402 }
+    // Charge Stripe (unless payments are disabled for demo)
+    if (!paymentsDisabled) {
+      const paymentIntent = await createBuildCharge(
+        subscription.stripeCustomerId,
+        costCents,
+        `WOEngine build for ${app.appName}`
       );
+
+      if (paymentIntent.status !== 'succeeded') {
+        return NextResponse.json(
+          { error: 'Payment failed' },
+          { status: 402 }
+        );
+      }
+
+      chargeId = paymentIntent.id;
     }
 
     // Create build record
@@ -79,8 +86,8 @@ export async function POST(request: NextRequest) {
         programVersionId: app.currentProgramVersionId,
         platforms: platforms as any,
         status: 'queued',
-        stripeChargeId: paymentIntent.id,
-        costCents,
+        stripeChargeId: chargeId,
+        costCents: paymentsDisabled ? 0 : costCents,
       },
     });
 
