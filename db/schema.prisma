@@ -1,0 +1,247 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenant: a customer company
+model Tenant {
+  id        String   @id @default(cuid())
+  companyName String
+  contactEmail String
+  status    TenantStatus @default(active)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription Subscription?
+  apps         App[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum TenantStatus {
+  active
+  suspended
+  churned
+}
+
+// Stripe subscription (one per tenant)
+model Subscription {
+  id        String   @id @default(cuid())
+  tenantId  String   @unique
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  plan                String? // e.g., "starter", "pro", "enterprise"
+  status              SubscriptionStatus @default(incomplete)
+  currentPeriodEnd    DateTime?
+  buildQuota          Int?          // Optional: included builds per period
+  buildsUsedThisPeriod Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stripeCustomerId])
+  @@index([status])
+}
+
+enum SubscriptionStatus {
+  incomplete
+  incomplete_expired
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+// A branded app (customers may have multiple)
+model App {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  appName   String
+  iosBundleId String @unique
+  androidPackageName String @unique
+
+  currentBrandManifestId String?
+  currentBrandManifest   BrandManifest? @relation("current", fields: [currentBrandManifestId], references: [id])
+
+  currentProgramVersionId String?
+  currentProgramVersion   ProgramVersion? @relation("current", fields: [currentProgramVersionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brandManifests BrandManifest[] @relation("all")
+  programVersions ProgramVersion[] @relation("all")
+  credentials AppleCredential[]
+  googleCredentials GoogleCredential[]
+  builds Build[]
+
+  @@index([tenantId])
+  @@index([createdAt])
+}
+
+// Versioned branding (icon, colors, app name per build)
+model BrandManifest {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation("all", fields: [appId], references: [id], onDelete: Cascade)
+  version   Int      @default(1)
+
+  appDisplayName String
+  iconAssetUrl String?
+  androidAdaptiveIconForegroundUrl String?
+  androidAdaptiveIconBackgroundUrl String?
+  androidAdaptiveIconMonochromeUrl String?
+  splashAssetUrl String?
+
+  // JSON object matching theme.default.js colors shape
+  colorTokens Json
+
+  createdAt DateTime @default(now())
+  createdBy String?  // userId if auth is set up
+
+  isCurrentFor App? @relation("current")
+  builds Build[] @relation("usedBrandManifest")
+
+  @@unique([appId, version])
+  @@index([appId])
+  @@index([createdAt])
+}
+
+// Versioned program/workout data
+model ProgramVersion {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation("all", fields: [appId], references: [id], onDelete: Cascade)
+  version   Int      @default(1)
+
+  // JSON matching program.default.js shape: LEVELS, CIRCUIT, SCHEDULE, etc.
+  programJson Json
+
+  isCurrent Boolean @default(false)
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  isCurrentFor App? @relation("current")
+  builds Build[] @relation("usedProgram")
+
+  @@unique([appId, version])
+  @@index([appId])
+  @@index([isCurrent])
+}
+
+// Apple Developer credentials (opaque secret references)
+model AppleCredential {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  ascKeyId String
+  ascIssuerId String
+  teamId   String
+
+  // Opaque reference to encrypted secret in AWS Secrets Manager
+  // Format: "secret:apple:${appId}:v1"
+  ascApiKeySecretRef String @unique
+
+  lastValidatedAt DateTime?
+  status CredentialStatus @default(valid)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId])
+  @@index([status])
+}
+
+model GoogleCredential {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Opaque reference to encrypted secret in AWS Secrets Manager
+  // Format: "secret:google:${appId}:v1"
+  serviceAccountJsonSecretRef String @unique
+
+  packageNameConfirmed Boolean @default(false)
+  lastValidatedAt DateTime?
+  status CredentialStatus @default(valid)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId])
+  @@index([status])
+}
+
+enum CredentialStatus {
+  valid
+  expired
+  invalid
+}
+
+// A build request and its result
+model Build {
+  id        String   @id @default(cuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  brandManifestId String
+  brandManifest BrandManifest @relation("usedBrandManifest", fields: [brandManifestId], references: [id])
+
+  programVersionId String
+  programVersion ProgramVersion @relation("usedProgram", fields: [programVersionId], references: [id])
+
+  platforms BuildPlatform[] // ios, android, or both
+
+  triggeredByUserId String?
+  status BuildStatus @default(queued)
+
+  easBuildIdIos String?
+  easBuildIdAndroid String?
+  easSubmitIdIos String?
+  easSubmitIdAndroid String?
+
+  failureReason String? // Sanitized EAS error messages
+
+  stripeChargeId String?
+  costCents Int?
+
+  startedAt DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([stripeChargeId])
+}
+
+enum BuildPlatform {
+  ios
+  android
+}
+
+enum BuildStatus {
+  queued
+  building
+  submitting
+  succeeded
+  failed
+  cancelled
+}
