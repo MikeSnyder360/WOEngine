@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BrandingEditor from '@/components/BrandingEditor';
 import ProgramEditor from '@/components/ProgramEditor';
+import BuildHistory from '@/components/BuildHistory';
 
 interface App {
   id: string;
@@ -159,7 +160,6 @@ export default function DashboardPage() {
                 appId={selectedAppId}
                 onSave={async (data) => {
                   console.log('Saving branding:', data);
-                  // TODO: Call API to save brand manifest
                 }}
               />
             )}
@@ -174,11 +174,12 @@ export default function DashboardPage() {
                 appId={selectedAppId}
                 onSave={async (data) => {
                   console.log('Saving program:', data);
-                  // TODO: Call API to save program version
                 }}
               />
             )}
           </section>
+
+          <BuildHistory appId={selectedAppId} />
         </>
       )}
     </main>
