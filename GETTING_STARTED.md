@@ -196,5 +196,6 @@ pnpm dev
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — System design
 - [REPOSITORY_STRUCTURE.md](./REPOSITORY_STRUCTURE.md) — Directory layout
-- [docs/BACKEND_STACK.md](./docs/BACKEND_STACK.md) — Backend services
+- [docs/BACKEND_STACK.md](./docs/BACKEND_STACK.md) — Backend services overview
 - [docs/SETUP.md](./docs/SETUP.md) — Advanced local setup
+- [docs/ORCHESTRATOR_SETUP.md](./docs/ORCHESTRATOR_SETUP.md) — Orchestrator backend guide (build pipeline)
